@@ -6,18 +6,18 @@
 ##  - IAM user details with full R/W permissions on a bucket (if created)
 
 output "bucket_name" {
-  description = "Name of the created bucket."
-  value = element(concat(aws_s3_bucket_policy.bucket .*.id, aws_s3_bucket.bucket .*.id, list("")), 0)
+    description = "Name of the created bucket."
+    value = element(concat(aws_s3_bucket.bucket .*.id, list("")), 0)
 }
 
 output "bucket_region" {
-  description = "Region in which the bucked it hosted."
-  value = element(concat(aws_s3_bucket.bucket .*.region, list("")), 0)
+    description = "Region in which the bucked it hosted."
+    value = element(concat(aws_s3_bucket.bucket .*.region, list("")), 0)
 }
 
 output "bucket_arn" {
-  description = "Bucket ARN to uniquely identify it as an AWS resource."
-  value = element(concat(aws_s3_bucket.bucket .*.arn, list("")), 0)
+    description = "Bucket ARN to uniquely identify it as an AWS resource."
+    value = element(concat(aws_s3_bucket.bucket .*.arn, list("")), 0)
 }
 
 output "bucket_log" {
@@ -27,5 +27,5 @@ output "bucket_log" {
 
 output "iam_user" {
     description = "IAM user details for bucket access, if it is created."
-    variable "TODO"
+    value = "TODO"
 }
