@@ -26,6 +26,11 @@ output "bucket_log" {
 }
 
 output "iam_user" {
-    description = "IAM user details for bucket access, if it is created."
-    value = "TODO"
+    description = "IAM username for bucket access, if it is created."
+    value = aws_iam_user.bucket_user .*.name
+}
+
+output "iam_user_key" {
+      description = "IAM secret key, if it is created."
+      value = aws_iam_access_key.bucket_user .*.key
 }

@@ -8,34 +8,31 @@
 ##  - option to create a dedicated IAM user with IAM policy for full r/w access on the created bucket(s)
 
 #done
-variable "credentials" {
-    description = "Location of AWS credentials file used to access AWS API"
-    type = string
-    default = "./aws_credentials"
-}
-#done
 variable "name" {
     description = "Used to name the bucket, if ommited, AWS will generate a random name"
     type = string
-  #  default = null
+    default = "test-bucket3222312.testing.example.com"
 }
 #done
 variable "logging" {
-    description = "Used to enable/disable logging on created bucket"
+    description = "Used to enable/disable logging on created bucket, bucket parameters must be defined"
     type = map(string)
     default = {}
 }
-
+#done
 variable "life_cycle" {
     description = "Used to enable/disable lifecycling on created bucket"
-    type = any
-    default = []
+    type = map(string)
+    default = {
+        enabled = true
+        days = 180
+    }
 }
 
 variable "replication" {
-    description = "Used to enable/disable replication on created bucket"
+    description = "Used to enable/disable replication on created bucket, replication policy must be defined"
     type = any
-    default = {}
+    default = []
 }
 #done
 variable "versioning" {
@@ -46,8 +43,10 @@ variable "versioning" {
 #done
 variable "encryption" {
     description = "Used to enable/disable encryption on created bucket."
-    type = any
-    default = {}
+    type = map(string)
+    default = {
+        enabled = false
+    }
 }
 #done
 variable "iamuser" {

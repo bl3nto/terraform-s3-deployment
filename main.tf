@@ -5,18 +5,10 @@ provider "aws" {
 }
 
 ## create bucket encryption key
-resource "aws_kms_key" "bucket_key" {
-    #count = var.encryption ? 1 : 0
-    description = "Server side bucket encryption."
-#   deletion_window_in_days = 10
-}
-
-## create a S3 bucket for logging
-resource "aws_s3_bucket" "bucket_log" {
-    #count = var.logging ? 1 : 0
-    bucket = "var.name_log_bucket"
-    acl = "log-delivery-write"
-}
+#resource "aws_kms_key" "bucket_key" {
+#    description = "Server side bucket encryption."
+    #deletion_window_in_days = 10
+#}
 
 ## create S3 bucket
 resource "aws_s3_bucket" "bucket" {
@@ -24,25 +16,53 @@ resource "aws_s3_bucket" "bucket" {
     acl = "private" ## default ACL policy for newly created buckets
 
     ## enable/disable bucket versioning
-    versioning {     
-        enabled = true
+    dynamic "versioning" {     
+        for_each = length(keys(var.versioning)) == 0 ? [] : [var.versioning]
+
+        content {
+            enabled = versioning.value.enabled
+            mfa_delete = versioning.value.mfa_delete
+        }
     }
     
-    ## enable/disable logging to a log bucket
-    logging {
-        target_bucket = "${aws_s3_bucket.bucket_log.id}"
-        target_prefix = "logs/"
+    ## enable/disable logging to a log bucket, log bucket must exists and be defined
+    dynamic "logging" {
+        for_each = length(keys(var.logging)) == 0 ? [] : [var.logging]
+
+        content {            
+            target_bucket = logging.value.log_bucket
+            target_prefix = logging.value.log_prefix
+        }
     }
 
-    ## server side encryption
-    server_side_encryption_configuration {
-        rule {
-            apply_server_side_encryption_by_default {
-                kms_master_key_id = "${aws_kms_key.bucket_key.arn}"
-                sse_algorithm  = "aws:kms"
+    ## enable basic lifecycle to delete objects older than defined ammount of days
+    dynamic "lifecycle_rule" {
+        for_each = length(keys(var.life_cycle)) == 0 ? [] : [var.life_cycle]
+        content {
+            enabled = var.life_cycle.enabled
+            tags = {
+                "rule" = "bucket_cleanup"
+                "autoclean" = "true"
+            }
+  
+            expiration {
+                days = var.life_cycle.days
             }
         }
     }
+
+    ## enable/disable server side encryption
+    #dynamic "server_side_encryption_configuration" {
+    #    for_each = values(var.encryption).enabled == false ? [] : [var.encryption] 
+    #    content {
+    #        rule {
+    #            apply_server_side_encryption_by_default {
+    #                kms_master_key_id = aws_kms_key.bucket_key.arn
+    #                sse_algorithm  = "aws:kms"
+    #            }
+    #        }
+    #    }
+    #}
 
     ## enable/disable lifecycle policy
 
@@ -52,23 +72,23 @@ resource "aws_s3_bucket" "bucket" {
 
 ## create IAM user with R/W access to bucket
 resource "aws_iam_user" "bucket_user" {
-    #count = var.iamuser ? 1 : 0
+    count = var.iamuser ? 1 : 0
     name = "${var.name}_iam_user"
-    path = "/" ## default path for newly created users
+    path = "/"
 }
 
 ## create IAM user access key
 resource "aws_iam_access_key" "bucket_user" {
-   # count = var.iamuser ? 1 : 0
-    user = "${aws_iam_user.bucket_user.name}"
+    count = var.iamuser ? 1 : 0
+    user = aws_iam_user.bucket_user[count.index].name
 }
 
 ## create R/W access policy for IAM user
 resource "aws_iam_user_policy" "bucket_user_rw" {
-   # count = var.iamuser ? 1 : 0
+    count = var.iamuser ? 1 : 0
 
     name = "${var.name}_rw_policy"
-    user = "${aws_iam_user.bucket_user.name}"
+    user = aws_iam_user.bucket_user[count.index].name
 
     policy = <<EOF
 {
