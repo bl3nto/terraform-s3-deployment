@@ -104,7 +104,7 @@ resource "aws_iam_user_policy" "bucket_user_rw" {
     name = "${var.name}_iam_user_rw_policy"
     user = aws_iam_user.bucket_user[count.index].name
 
-policy = <<EOF
+    policy = <<POLICY
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -119,7 +119,7 @@ policy = <<EOF
             ],
             "Effect": "Allow",
             "Resource": [
-                "${aws_s3_bucket.bucket.arn}/*"
+                "${aws_s3_bucket.bucket.arn}/*""
             ]
         },
         {
@@ -131,7 +131,7 @@ policy = <<EOF
         }
     ]
 }
-
+POLICY
 }
 
 resource "aws_iam_role" "replication" {
