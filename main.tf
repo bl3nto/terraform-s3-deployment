@@ -10,17 +10,17 @@ resource "aws_s3_bucket" "bucket" {
 
     ## enable/disable bucket versioning
     dynamic "versioning" {     
-        for_each = length(keys(var.versioning)) == 2 ? [var.versioning] : []
+        for_each = length(keys(var.versioning)) == 0 ? [] : [var.versioning]
 
         content {
             enabled = versioning.value.enabled
-            mfa_delete = versioning.value.mfa_delete
+            mfa_delete = false
         }
     }
     
     ## enable/disable logging to a log bucket, log bucket must exists and be defined
     dynamic "logging" {
-        for_each = length(keys(var.logging)) == 2 ? [var.logging] : []
+        for_each = length(keys(var.logging)) == 0 ? [] : [var.logging]
 
         content {            
             target_bucket = logging.value.log_bucket_id
@@ -30,9 +30,9 @@ resource "aws_s3_bucket" "bucket" {
 
     ## enable basic lifecycle to delete objects older than defined ammount of days
     dynamic "lifecycle_rule" {
-        for_each = length(keys(var.life_cycle)) == 2 ? [var.life_cycle] : []
+        for_each = length(keys(var.life_cycle)) == 0 ? [] : [var.life_cycle]
         content {
-            enabled = var.life_cycle.enabled
+            enabled = true
             tags = {
                 "rule" = "bucket_cleanup"
                 "autoclean" = "true"
@@ -46,7 +46,7 @@ resource "aws_s3_bucket" "bucket" {
 
     ## enable/disable basic replication to a predefined bucket (with a provided IAM role policy)
     dynamic "replication_configuration" {
-        for_each = length(keys(var.replication)) == 3 ? [var.replication] : []
+        for_each = length(keys(var.replication)) == 0 ? [] : [var.replication]
 
         content {
             role = aws_iam_role.replication[0].arn
