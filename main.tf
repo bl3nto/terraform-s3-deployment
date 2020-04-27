@@ -92,7 +92,7 @@ resource "aws_iam_user" "bucket_user" {
 }
 
 ## create IAM user access key
-resource "aws_iam_access_key" "bucket_user" {
+resource "aws_iam_access_key" "bucket_user_key" {
     count = var.iamuser == true ? 1 : 0
     user = aws_iam_user.bucket_user[count.index].name
 }
@@ -104,20 +104,33 @@ resource "aws_iam_user_policy" "bucket_user_rw" {
     name = "${var.name}_iam_user_rw_policy"
     user = aws_iam_user.bucket_user[count.index].name
 
-    policy = <<EOF
+policy = <<EOF
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "s3:*"
-      ],
-      "Effect": "Allow",
-      "Resource": "${aws_s3_bucket.bucket.arn}"
-    }
-  ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "s3:PutObject",
+                "s3:PutObjectAcl",
+                "s3:GetObject",
+                "s3:GetObjectVersion",
+                "s3:DeleteObject",
+                "s3:DeleteObjectVersion"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "${aws_s3_bucket.bucket.arn}/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": [
+                "${aws_s3_bucket.bucket.arn}"
+            ]
+        }
+    ]
 }
-EOF
 
 }
 
