@@ -1,7 +1,0 @@
-s3_deploy.tf
-aws_credentials
-/.terraform
-.gitignore
-/create_iam_user
-terraform.tfstate
-terraform.tfstate.backup

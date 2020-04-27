@@ -1,14 +1,11 @@
 provider "aws" {
     region = var.region
-    #shared_credentials_file = "./aws_credentials"
 }
 
-## create S3 bucket
 resource "aws_s3_bucket" "bucket" {
     bucket = var.name
-    acl = "private" ## default ACL policy for newly created buckets
+    acl = "private"
 
-    ## enable/disable bucket versioning
     dynamic "versioning" {     
         for_each = length(keys(var.versioning)) == 0 ? [] : [var.versioning]
 
@@ -18,7 +15,6 @@ resource "aws_s3_bucket" "bucket" {
         }
     }
     
-    ## enable/disable logging to a log bucket, log bucket must exists and be defined
     dynamic "logging" {
         for_each = length(keys(var.logging)) == 0 ? [] : [var.logging]
 
@@ -28,7 +24,6 @@ resource "aws_s3_bucket" "bucket" {
         }
     }
 
-    ## enable basic lifecycle to delete objects older than defined ammount of days
     dynamic "lifecycle_rule" {
         for_each = length(keys(var.life_cycle)) == 0 ? [] : [var.life_cycle]
         content {
@@ -44,7 +39,6 @@ resource "aws_s3_bucket" "bucket" {
         }
     }
 
-    ## enable/disable basic replication to a predefined bucket (with a provided IAM role policy)
     dynamic "replication_configuration" {
         for_each = length(keys(var.replication)) == 0 ? [] : [var.replication]
 
@@ -63,7 +57,6 @@ resource "aws_s3_bucket" "bucket" {
         }
     }
 
-    ## enable/disable server side encryption
     dynamic "server_side_encryption_configuration" {
         for_each = length(keys(var.encryption)) == 1 ? [var.encryption] : []
         content {
@@ -119,7 +112,7 @@ resource "aws_iam_user_policy" "bucket_user_rw" {
             ],
             "Effect": "Allow",
             "Resource": [
-                "${aws_s3_bucket.bucket.arn}/*""
+                "${aws_s3_bucket.bucket.arn}/*"
             ]
         },
         {
@@ -134,6 +127,7 @@ resource "aws_iam_user_policy" "bucket_user_rw" {
 POLICY
 }
 
+## create replication role
 resource "aws_iam_role" "replication" {
     count = length(keys(var.replication)) == 3 ? 1 : 0
     name = var.replication.replication_role_name
@@ -155,6 +149,7 @@ resource "aws_iam_role" "replication" {
 POLICY
 }
 
+## create replication policy
 resource "aws_iam_policy" "replication" {
     count = length(keys(var.replication)) == 3 ? 1 : 0
     name = var.replication.replication_policy_name
@@ -170,7 +165,7 @@ resource "aws_iam_policy" "replication" {
       ],
       "Effect": "Allow",
       "Resource": [
-        "${var.replication.replication_bucket_arn}"
+        "${aws_s3_bucket.bucket.arn}"
       ]
     },
     {
@@ -180,7 +175,7 @@ resource "aws_iam_policy" "replication" {
       ],
       "Effect": "Allow",
       "Resource": [
-        "${var.replication.replication_bucket_arn}/*"
+        "${aws_s3_bucket.bucket.arn}/*"
       ]
     },
     {
@@ -196,6 +191,7 @@ resource "aws_iam_policy" "replication" {
 POLICY
 }
 
+## attach role and policy
 resource "aws_iam_role_policy_attachment" "replication" {
     count = length(keys(var.replication)) == 3 ? 1 : 0
     role = aws_iam_role.replication[count.index].name
